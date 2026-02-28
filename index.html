@@ -164,6 +164,9 @@ select{cursor:pointer;appearance:none;background-image:url("data:image/svg+xml,%
     <input type="password" id="apiKey" placeholder="sk-ant-…" autocomplete="off">
     <button class="eye-btn" onclick="toggleKey()" title="Sichtbarkeit umschalten">👁</button>
     <span class="api-hint">Key holen: <a href="https://console.anthropic.com/settings/keys" target="_blank">console.anthropic.com</a></span>
+    <label for="proxyUrl" style="margin-left:1.2rem;">Proxy-URL</label>
+    <input type="text" id="proxyUrl" placeholder="https://….workers.dev (optional)" style="width:22rem;" autocomplete="off">
+    <span class="api-hint"><a href="https://workers.cloudflare.com" target="_blank">Cloudflare Worker</a> einrichten → worker.js</span>
   </div>
 </header>
 
@@ -331,7 +334,7 @@ let streaming  = false;
 addChar(); addChar();
 addScene(); addScene(); addScene();
 
-// Persist API key in localStorage (bleibt auch nach Tab-Schliessen erhalten)
+// Persist API key in localStorage
 const savedKey = localStorage.getItem('anthro_key') || sessionStorage.getItem('anthro_key');
 if (savedKey) document.getElementById('apiKey').value = savedKey;
 document.getElementById('apiKey').addEventListener('input', e => {
@@ -339,6 +342,17 @@ document.getElementById('apiKey').addEventListener('input', e => {
     localStorage.setItem('anthro_key', e.target.value);
   } else {
     localStorage.removeItem('anthro_key');
+  }
+});
+
+// Persist Proxy-URL in localStorage
+const savedProxy = localStorage.getItem('anthro_proxy');
+if (savedProxy) document.getElementById('proxyUrl').value = savedProxy;
+document.getElementById('proxyUrl').addEventListener('input', e => {
+  if (e.target.value) {
+    localStorage.setItem('anthro_proxy', e.target.value.trim());
+  } else {
+    localStorage.removeItem('anthro_proxy');
   }
 });
 
@@ -542,13 +556,15 @@ async function generate() {
     </div>`;
 
   try {
-    const res = await fetch('https://api.anthropic.com/v1/messages', {
+    const proxyUrl = (document.getElementById('proxyUrl').value || '').trim();
+    const endpoint = proxyUrl || 'https://api.anthropic.com/v1/messages';
+    const res = await fetch(endpoint, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'x-api-key': apiKey,
         'anthropic-version': '2023-06-01',
-        'anthropic-dangerous-direct-browser-calls': 'true'
+        ...(!proxyUrl && { 'anthropic-dangerous-direct-browser-calls': 'true' })
       },
       body: JSON.stringify({
         model:      document.getElementById('model').value,
