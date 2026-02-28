@@ -161,7 +161,7 @@ select{cursor:pointer;appearance:none;background-image:url("data:image/svg+xml,%
   </div>
   <div class="header-api">
     <label for="apiKey">Anthropic API Key</label>
-    <input type="password" id="apiKey" placeholder="sk-ant-…" autocomplete="off">
+    <input type="text" id="apiKey" placeholder="sk-ant-…" autocomplete="off" style="-webkit-text-security:disc;">
     <button class="eye-btn" onclick="toggleKey()" title="Sichtbarkeit umschalten">👁</button>
     <span class="api-hint">Key holen: <a href="https://console.anthropic.com/settings/keys" target="_blank">console.anthropic.com</a></span>
     <label for="proxyUrl" style="margin-left:1.2rem;">Proxy-URL</label>
@@ -361,7 +361,7 @@ document.getElementById('proxyUrl').addEventListener('input', e => {
 // ════════════════════════════════════════════════
 function toggleKey() {
   const k = document.getElementById('apiKey');
-  k.type = k.type === 'password' ? 'text' : 'password';
+  k.style.webkitTextSecurity = k.style.webkitTextSecurity === 'none' ? 'disc' : 'none';
 }
 
 function setStyleMode(m) {
