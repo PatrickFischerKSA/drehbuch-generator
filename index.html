@@ -1,0 +1,742 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Drehbuch-Generator</title>
+<style>
+:root {
+  --bg: #111113;
+  --surface: #1b1b1f;
+  --surface2: #24242a;
+  --surface3: #2e2e36;
+  --border: #38383f;
+  --accent: #e2c96b;
+  --accent-dim: #a8953f;
+  --blue: #5b9cf6;
+  --red: #e05555;
+  --text: #dcdce8;
+  --text-muted: #7a7a8c;
+  --paper: #f5f0e6;
+  --paper-text: #1a1a22;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);display:flex;flex-direction:column}
+
+/* ── HEADER ── */
+header{background:var(--surface);border-bottom:1px solid var(--border);padding:10px 20px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.logo{display:flex;align-items:center;gap:10px}
+.logo-icon{font-size:1.4rem}
+.logo h1{font-size:1rem;font-weight:700;color:var(--accent);letter-spacing:-.3px}
+.logo p{font-size:.7rem;color:var(--text-muted);margin-top:1px}
+.header-api{display:flex;align-items:center;gap:8px}
+.header-api label{font-size:.7rem;color:var(--text-muted);white-space:nowrap}
+.header-api input{width:240px;padding:5px 9px;background:var(--surface2);border:1px solid var(--border);border-radius:5px;color:var(--text);font-size:.75rem;font-family:monospace}
+.header-api input:focus{outline:none;border-color:var(--accent)}
+.eye-btn{background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:.9rem;padding:2px 4px}
+.api-hint{font-size:.65rem;color:#555;white-space:nowrap}
+.api-hint a{color:var(--accent-dim);text-decoration:none}
+.api-hint a:hover{color:var(--accent)}
+
+/* ── MAIN LAYOUT ── */
+.main{display:flex;flex:1;overflow:hidden}
+
+/* ── LEFT PANEL ── */
+.panel-left{width:400px;min-width:360px;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden}
+.panel-scroll{flex:1;overflow-y:auto;padding-bottom:8px}
+.panel-scroll::-webkit-scrollbar{width:5px}
+.panel-scroll::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+
+/* ── SECTIONS ── */
+.sec{border-bottom:1px solid var(--border);padding:14px 16px}
+.sec-head{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+.sec-num{width:18px;height:18px;background:var(--accent);color:#111;border-radius:50%;font-size:.6rem;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.sec-title{font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;color:var(--accent)}
+
+/* ── FORMS ── */
+.field-label{display:block;font-size:.7rem;color:var(--text-muted);margin-bottom:3px;margin-top:9px}
+.field-label:first-child{margin-top:0}
+input[type=text],input[type=password],textarea,select{width:100%;background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:5px;padding:7px 9px;font-size:.8rem;font-family:inherit;transition:border-color .15s}
+input[type=text]:focus,input[type=password]:focus,textarea:focus,select:focus{outline:none;border-color:var(--accent)}
+textarea{resize:vertical}
+select{cursor:pointer;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath fill='%237a7a8c' d='M0 0l5 6 5-6z'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 9px center}
+
+/* ── TOGGLE BUTTONS ── */
+.toggle-group{display:flex;gap:3px;background:var(--surface2);padding:3px;border-radius:6px;margin-bottom:10px}
+.tbtn{flex:1;padding:5px 8px;border:none;background:transparent;color:var(--text-muted);border-radius:4px;cursor:pointer;font-size:.73rem;font-weight:600;transition:all .15s;font-family:inherit}
+.tbtn.active{background:var(--accent);color:#111}
+
+/* ── CHARACTER CARDS ── */
+.char-card{background:var(--surface2);border:1px solid var(--border);border-radius:7px;padding:10px 12px;margin-bottom:7px}
+.char-card-head{display:flex;align-items:center;justify-content:space-between}
+.char-name-label{font-size:.82rem;font-weight:700;color:var(--accent);cursor:pointer}
+.char-actions{display:flex;gap:2px}
+.icon-btn{background:none;border:none;cursor:pointer;padding:2px 5px;font-size:.85rem;color:var(--text-muted);transition:color .15s}
+.icon-btn:hover{color:var(--text)}
+.icon-btn.del:hover{color:var(--red)}
+.char-body{margin-top:8px}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+
+/* ── SCENES ── */
+.scene-item{display:flex;gap:7px;align-items:flex-start;margin-bottom:6px}
+.scene-num{background:var(--surface3);color:var(--text-muted);border-radius:4px;padding:2px 6px;font-size:.68rem;font-weight:700;min-width:24px;text-align:center;margin-top:6px;flex-shrink:0}
+.scene-ta{flex:1;background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:5px;padding:6px 8px;font-size:.78rem;font-family:inherit;resize:none;min-height:38px;line-height:1.4}
+.scene-ta:focus{outline:none;border-color:var(--accent)}
+
+/* ── BUTTONS ── */
+.btn{padding:7px 14px;border:none;border-radius:5px;cursor:pointer;font-size:.78rem;font-weight:600;font-family:inherit;transition:all .15s}
+.btn-ghost{background:var(--surface2);color:var(--text-muted);border:1px solid var(--border)}
+.btn-ghost:hover{background:var(--surface3);color:var(--text)}
+.btn-accent{background:var(--accent);color:#111}
+.btn-accent:hover:not(:disabled){background:#f0d878;transform:translateY(-1px)}
+.btn-full{width:100%;padding:11px;font-size:.88rem;font-weight:700;letter-spacing:.3px}
+.btn:disabled{opacity:.45;cursor:not-allowed;transform:none!important}
+.btn-sm{padding:4px 9px;font-size:.7rem}
+
+/* ── OPTIONS GRID ── */
+.opts-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+
+/* ── GENERATE AREA ── */
+.gen-area{padding:14px 16px;background:linear-gradient(to bottom,var(--surface),#15151a);flex-shrink:0}
+.error-box{background:#3a1515;border:1px solid #6a2525;border-radius:5px;padding:8px 11px;font-size:.75rem;color:#ff9090;margin-bottom:8px}
+
+/* ── RIGHT PANEL ── */
+.panel-right{flex:1;display:flex;flex-direction:column;min-width:0;overflow:hidden}
+.out-header{background:var(--surface);border-bottom:1px solid var(--border);padding:9px 18px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.out-title{font-size:.68rem;text-transform:uppercase;letter-spacing:1px;color:var(--text-muted)}
+.out-actions{display:flex;gap:7px}
+
+/* ── SCREENPLAY OUTPUT ── */
+.out-body{flex:1;overflow:hidden;display:flex;flex-direction:column}
+.empty-state{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;color:var(--text-muted);padding:20px}
+.empty-icon{font-size:3.5rem;opacity:.25}
+.empty-hint{font-size:.8rem;text-align:center;max-width:300px;line-height:1.6}
+.empty-sub{font-size:.7rem;color:#555;text-align:center;max-width:280px;line-height:1.5}
+
+.loading-view{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;color:var(--text-muted)}
+.spinner{width:36px;height:36px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin 1s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loading-label{font-size:.82rem}
+.loading-sub{font-size:.71rem;color:#555}
+
+.screenplay-wrap{flex:1;overflow-y:auto;background:var(--paper);padding:48px 36px;display:flex;justify-content:center}
+.screenplay-wrap::-webkit-scrollbar{width:6px}
+.screenplay-wrap::-webkit-scrollbar-thumb{background:#c8c0b0;border-radius:3px}
+.screenplay-page{width:100%;max-width:660px}
+.screenplay-text{font-family:'Courier New',Courier,monospace;font-size:12.5px;line-height:1.8;color:var(--paper-text)}
+
+/* Screenplay element classes */
+.sc-slug{font-weight:bold;text-transform:uppercase;margin-top:1.6em;display:block}
+.sc-transition{display:block;text-align:right;font-weight:bold;text-transform:uppercase;margin:.7em 0}
+.sc-action{display:block;color:#1a1a22;margin:.1em 0}
+.sc-char{display:block;text-align:center;font-weight:bold;text-transform:uppercase;margin-top:1.2em;margin-bottom:.05em}
+.sc-paren{display:block;margin:0 120px;font-style:italic;color:#555}
+.sc-dial{display:block;margin:0 80px}
+.sc-blank{display:block;height:.55em}
+
+/* Streaming cursor */
+.cursor{display:inline-block;width:2px;height:1em;background:var(--paper-text);animation:blink .7s steps(1) infinite;vertical-align:text-bottom;margin-left:1px;border-radius:1px}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
+
+/* Responsive */
+@media(max-width:860px){
+  .panel-left{width:320px;min-width:280px}
+  .header-api input{width:160px}
+  .api-hint{display:none}
+  .screenplay-wrap{padding:24px 16px}
+}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header>
+  <div class="logo">
+    <span class="logo-icon">🎬</span>
+    <div>
+      <h1>Drehbuch-Generator</h1>
+      <p>Storyline → fertiges Drehbuch · Powered by Claude</p>
+    </div>
+  </div>
+  <div class="header-api">
+    <label for="apiKey">Anthropic API Key</label>
+    <input type="password" id="apiKey" placeholder="sk-ant-…" autocomplete="off">
+    <button class="eye-btn" onclick="toggleKey()" title="Sichtbarkeit umschalten">👁</button>
+    <span class="api-hint">Key holen: <a href="https://console.anthropic.com/settings/keys" target="_blank">console.anthropic.com</a></span>
+  </div>
+</header>
+
+<!-- MAIN -->
+<div class="main">
+
+  <!-- ── LEFT PANEL ── -->
+  <div class="panel-left">
+    <div class="panel-scroll">
+
+      <!-- 1 · STILVORLAGE -->
+      <div class="sec">
+        <div class="sec-head"><div class="sec-num">1</div><div class="sec-title">Stilvorlage</div></div>
+        <div class="toggle-group">
+          <button class="tbtn active" id="ts-series" onclick="setStyleMode('series')">Serien-Vorbild</button>
+          <button class="tbtn" id="ts-sample" onclick="setStyleMode('sample')">Dialogprobe</button>
+          <button class="tbtn" id="ts-tone"   onclick="setStyleMode('tone')">Tonalität</button>
+        </div>
+
+        <!-- Series reference -->
+        <div id="sm-series">
+          <label class="field-label">Serien- oder Film-Vorbild</label>
+          <input type="text" id="seriesRef" placeholder="z. B. Dark, Babylon Berlin, Tatort, Breaking Bad …">
+          <label class="field-label" style="margin-top:8px">Was soll übernommen werden? (optional)</label>
+          <textarea id="seriesDesc" rows="2" placeholder="z. B. lakonische Dialoge, dichte Atmosphäre, kurze Szenenfolge …"></textarea>
+        </div>
+
+        <!-- Dialogue sample -->
+        <div id="sm-sample" style="display:none">
+          <label class="field-label">Dialogprobe / Stilmuster</label>
+          <textarea id="dialogSample" rows="7" placeholder="Füge hier einen kurzen Beispieldialog ein. Claude übernimmt Rhythmus, Subtext und Tonfall dieses Musters genau."></textarea>
+        </div>
+
+        <!-- Tone -->
+        <div id="sm-tone" style="display:none">
+          <label class="field-label">Grundtonalität</label>
+          <select id="toneSelect">
+            <option value="dramatisch-ernst">Dramatisch / Ernst</option>
+            <option value="komödiantisch">Komödiantisch</option>
+            <option value="thriller">Thriller / Spannungsgeladen</option>
+            <option value="noir">Noir / Düster</option>
+            <option value="lakonisch-trocken">Lakonisch / Trocken</option>
+            <option value="poetisch-atmosphärisch">Poetisch / Atmosphärisch</option>
+            <option value="sozialrealistisch">Sozialrealistisch</option>
+            <option value="satirisch">Satirisch</option>
+          </select>
+          <label class="field-label" style="margin-top:8px">Dialogstil</label>
+          <select id="dialogStyle">
+            <option value="viel Subtext, wenig Direktheit">Viel Subtext, wenig Direktheit</option>
+            <option value="direkt und konfrontativ">Direkt und konfrontativ</option>
+            <option value="literarisch und bildreich">Literarisch und bildreich</option>
+            <option value="alltäglich und naturalistisch">Alltäglich und naturalistisch</option>
+            <option value="lakonisch, kurze Sätze">Lakonisch, kurze Sätze</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- 2 · FIGUREN -->
+      <div class="sec">
+        <div class="sec-head"><div class="sec-num">2</div><div class="sec-title">Figuren</div></div>
+        <div id="chars-list"></div>
+        <button class="btn btn-ghost btn-sm" style="width:100%;margin-top:4px" onclick="addChar()">+ Figur hinzufügen</button>
+      </div>
+
+      <!-- 3 · STORYLINE -->
+      <div class="sec">
+        <div class="sec-head"><div class="sec-num">3</div><div class="sec-title">Storyline / Szenenfolge</div></div>
+        <div class="toggle-group">
+          <button class="tbtn active" id="ts-scenes" onclick="setStoryMode('scenes')">Szenen</button>
+          <button class="tbtn" id="ts-free"   onclick="setStoryMode('free')">Freitext</button>
+        </div>
+        <div id="sm-scenes">
+          <div id="scenes-list"></div>
+          <button class="btn btn-ghost btn-sm" style="width:100%;margin-top:4px" onclick="addScene()">+ Szene hinzufügen</button>
+        </div>
+        <div id="sm-free" style="display:none">
+          <textarea id="freeStory" rows="9" placeholder="Beschreibe die Handlung frei: Was passiert, wer trifft wen, welche Konflikte entfalten sich, wie endet die Geschichte …"></textarea>
+        </div>
+      </div>
+
+      <!-- 4 · OPTIONEN -->
+      <div class="sec">
+        <div class="sec-head"><div class="sec-num">4</div><div class="sec-title">Optionen</div></div>
+        <div class="opts-grid">
+          <div>
+            <label class="field-label">Szenenlänge</label>
+            <select id="sceneLen">
+              <option value="kurz">Kurz (1–2 Min.)</option>
+              <option value="mittel" selected>Mittel (3–4 Min.)</option>
+              <option value="lang">Lang (5–7 Min.)</option>
+            </select>
+          </div>
+          <div>
+            <label class="field-label">Sprache / Varietät</label>
+            <select id="langVar">
+              <option value="Hochdeutsch">Hochdeutsch</option>
+              <option value="Schweizerdeutsch-Färbung">Schweizerdeutsch-Färbung</option>
+              <option value="Österreichisch-Färbung">Österreichisch-Färbung</option>
+            </select>
+          </div>
+          <div>
+            <label class="field-label">Regieanweisungen</label>
+            <select id="stageDir">
+              <option value="sparsam">Sparsam</option>
+              <option value="standard" selected>Standard</option>
+              <option value="detailliert">Detailliert</option>
+            </select>
+          </div>
+          <div>
+            <label class="field-label">Modell</label>
+            <select id="model">
+              <option value="claude-sonnet-4-5-20250929" selected>Claude Sonnet 4.5</option>
+              <option value="claude-opus-4-5-20251101">Claude Opus 4.5</option>
+              <option value="claude-haiku-4-5-20251001">Claude Haiku 4.5</option>
+            </select>
+          </div>
+        </div>
+        <label class="field-label" style="margin-top:10px">Zusätzliche Hinweise für Claude (optional)</label>
+        <textarea id="extraHints" rows="2" placeholder="z. B. Kein Happy End · Cliffhanger am Ende · sehr minimalistischer Stil …"></textarea>
+      </div>
+
+    </div><!-- /panel-scroll -->
+
+    <!-- GENERATE -->
+    <div class="gen-area">
+      <div id="err-box" style="display:none" class="error-box"></div>
+      <button class="btn btn-accent btn-full" id="genBtn" onclick="generate()">🎬 Drehbuch generieren</button>
+    </div>
+  </div><!-- /panel-left -->
+
+  <!-- ── RIGHT PANEL ── -->
+  <div class="panel-right">
+    <div class="out-header">
+      <span class="out-title">Drehbuch</span>
+      <div class="out-actions">
+        <button class="btn btn-ghost btn-sm" id="copyBtn" style="display:none" onclick="copyScript()">📋 Kopieren</button>
+        <button class="btn btn-ghost btn-sm" id="dlTxt"   style="display:none" onclick="downloadTxt()">⬇ .txt</button>
+        <button class="btn btn-ghost btn-sm" id="dlFtn"   style="display:none" onclick="downloadFountain()">⬇ .fountain</button>
+      </div>
+    </div>
+    <div class="out-body" id="outBody">
+      <div class="empty-state">
+        <div class="empty-icon">📄</div>
+        <p class="empty-hint">Fülle Stilvorlage, Figuren und Storyline aus — dann klicke <strong>Drehbuch generieren</strong>.</p>
+        <p class="empty-sub">API Key oben rechts eingeben. Erhältlich auf <a href="https://console.anthropic.com/settings/keys" target="_blank" style="color:var(--accent-dim)">console.anthropic.com</a>.</p>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /main -->
+
+<script>
+// ════════════════════════════════════════════════
+//  STATE
+// ════════════════════════════════════════════════
+let styleMode = 'series';
+let storyMode = 'scenes';
+let chars  = [];
+let scenes = [];
+let cid = 0, sid = 0;
+let rawScript = '';
+let streaming  = false;
+
+// ── INIT
+addChar(); addChar();
+addScene(); addScene(); addScene();
+
+// Persist API key in sessionStorage (never localStorage)
+const savedKey = sessionStorage.getItem('anthro_key');
+if (savedKey) document.getElementById('apiKey').value = savedKey;
+document.getElementById('apiKey').addEventListener('input', e => {
+  sessionStorage.setItem('anthro_key', e.target.value);
+});
+
+// ════════════════════════════════════════════════
+//  UI HELPERS
+// ════════════════════════════════════════════════
+function toggleKey() {
+  const k = document.getElementById('apiKey');
+  k.type = k.type === 'password' ? 'text' : 'password';
+}
+
+function setStyleMode(m) {
+  styleMode = m;
+  ['series','sample','tone'].forEach(x => {
+    document.getElementById('sm-'+x).style.display = x===m ? '' : 'none';
+    document.getElementById('ts-'+x).classList.toggle('active', x===m);
+  });
+}
+
+function setStoryMode(m) {
+  storyMode = m;
+  document.getElementById('sm-scenes').style.display = m==='scenes' ? '' : 'none';
+  document.getElementById('sm-free').style.display   = m==='free'   ? '' : 'none';
+  document.getElementById('ts-scenes').classList.toggle('active', m==='scenes');
+  document.getElementById('ts-free').classList.toggle('active', m==='free');
+}
+
+function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+// ════════════════════════════════════════════════
+//  CHARACTERS
+// ════════════════════════════════════════════════
+function addChar() {
+  chars.push({ id:++cid, name:'', age:'', psych:'', voice:'', goal:'', open:true });
+  renderChars();
+}
+function removeChar(id){ chars = chars.filter(c => c.id !== id); renderChars(); }
+function toggleChar(id){ const c = chars.find(c => c.id===id); if(c){ c.open=!c.open; renderChars(); } }
+function setChar(id,k,v){ const c = chars.find(c => c.id===id); if(c) c[k]=v; }
+
+function renderChars() {
+  document.getElementById('chars-list').innerHTML = chars.map(c => `
+    <div class="char-card">
+      <div class="char-card-head">
+        <span class="char-name-label" onclick="toggleChar(${c.id})">${esc(c.name)||'(Neue Figur)'}</span>
+        <div class="char-actions">
+          <button class="icon-btn" onclick="toggleChar(${c.id})">${c.open?'▾':'▸'}</button>
+          <button class="icon-btn del" onclick="removeChar(${c.id})" title="Figur entfernen">✕</button>
+        </div>
+      </div>
+      ${c.open ? `<div class="char-body">
+        <label class="field-label">Name</label>
+        <input type="text" value="${esc(c.name)}" placeholder="z. B. ANNA WEBER"
+          oninput="setChar(${c.id},'name',this.value);this.closest('.char-card').querySelector('.char-name-label').textContent=this.value||'(Neue Figur)'">
+        <div class="row2">
+          <div>
+            <label class="field-label">Alter / Erscheinung</label>
+            <input type="text" value="${esc(c.age)}" placeholder="z. B. Mitte 30, müde Augen"
+              oninput="setChar(${c.id},'age',this.value)">
+          </div>
+          <div>
+            <label class="field-label">Ziel / Motivation</label>
+            <input type="text" value="${esc(c.goal)}" placeholder="Was will sie/er erreichen?"
+              oninput="setChar(${c.id},'goal',this.value)">
+          </div>
+        </div>
+        <label class="field-label">Charakter / Psyche / Wunde</label>
+        <textarea rows="2" placeholder="Persönlichkeit, innerer Konflikt, Angst, Selbsttäuschung …"
+          oninput="setChar(${c.id},'psych',this.value)">${esc(c.psych)}</textarea>
+        <label class="field-label">Sprechweise / Stimme</label>
+        <textarea rows="2" placeholder="Kurze Sätze? Viel Ironie? Spricht nie direkt über Gefühle? Dialektfärbung?"
+          oninput="setChar(${c.id},'voice',this.value)">${esc(c.voice)}</textarea>
+      </div>` : ''}
+    </div>`).join('');
+}
+
+// ════════════════════════════════════════════════
+//  SCENES
+// ════════════════════════════════════════════════
+function addScene() {
+  scenes.push({ id:++sid, text:'' });
+  renderScenes();
+}
+function removeScene(id){ scenes = scenes.filter(s => s.id !== id); renderScenes(); }
+function setScene(id,v){ const s = scenes.find(s => s.id===id); if(s) s.text=v; }
+
+function renderScenes() {
+  document.getElementById('scenes-list').innerHTML = scenes.map((s,i) => `
+    <div class="scene-item">
+      <div class="scene-num">${i+1}</div>
+      <textarea class="scene-ta" rows="2"
+        placeholder="Szene ${i+1}: Ort, was passiert, Konflikt, beteiligte Figuren …"
+        oninput="setScene(${s.id},this.value)">${esc(s.text)}</textarea>
+      <button class="icon-btn del" style="margin-top:5px" onclick="removeScene(${s.id})" title="Szene entfernen">✕</button>
+    </div>`).join('');
+}
+
+// ════════════════════════════════════════════════
+//  PROMPT BUILDER
+// ════════════════════════════════════════════════
+function buildPrompt() {
+  // Style
+  let style = '';
+  if (styleMode === 'series') {
+    const ref  = document.getElementById('seriesRef').value.trim();
+    const desc = document.getElementById('seriesDesc').value.trim();
+    if (ref) {
+      style = `STILISTISCHES VORBILD: "${ref}"`;
+      if (desc) style += `\nWas davon übernommen werden soll: ${desc}`;
+    }
+  } else if (styleMode === 'sample') {
+    const s = document.getElementById('dialogSample').value.trim();
+    if (s) style = `DIALOGPROBE / STILMUSTER – übernimm Rhythmus, Subtext und Tonfall dieses Musters exakt:\n\`\`\`\n${s}\n\`\`\``;
+  } else {
+    style = `TONALITÄT: ${document.getElementById('toneSelect').value}\nDIALOGSTIL: ${document.getElementById('dialogStyle').value}`;
+  }
+
+  // Characters
+  const charBlock = chars.filter(c => c.name.trim()).map(c => {
+    let s = `**${c.name.toUpperCase()}**`;
+    if (c.age)   s += `\n  Erscheinung: ${c.age}`;
+    if (c.psych) s += `\n  Charakter/Psyche: ${c.psych}`;
+    if (c.voice) s += `\n  Sprechweise: ${c.voice}`;
+    if (c.goal)  s += `\n  Ziel/Motivation: ${c.goal}`;
+    return s;
+  }).join('\n\n') || '(keine Figuren angegeben)';
+
+  // Story
+  let story = '';
+  if (storyMode === 'scenes') {
+    story = scenes.filter(s => s.text.trim()).map((s,i) => `Szene ${i+1}: ${s.text}`).join('\n');
+  } else {
+    story = document.getElementById('freeStory').value.trim();
+  }
+  if (!story) story = '(keine Storyline angegeben)';
+
+  // Options
+  const lenMap  = { kurz:'ca. 1–2 Min. Spielzeit (≈ 1–1,5 Seiten)', mittel:'ca. 3–4 Min. Spielzeit (≈ 2–3 Seiten)', lang:'ca. 5–7 Min. Spielzeit (≈ 4–5 Seiten)' };
+  const dirMap  = { sparsam:'Regieanweisungen so sparsam wie möglich.', standard:'Regieanweisungen im Standard-Drehbuchstil.', detailliert:'Regieanweisungen reichhaltig und atmosphärisch.' };
+  const extra   = document.getElementById('extraHints').value.trim();
+
+  return `Du bist ein professioneller deutschsprachiger Drehbuchautor. Schreibe ein vollständiges, aufführbares Drehbuch gemäß diesen Vorgaben.
+
+## STIL
+${style || '(kein spezifisches Vorbild – klassischer Drehbuchstil)'}
+
+## FIGUREN
+${charBlock}
+
+## STORYLINE / SZENENFOLGE
+${story}
+
+## TECHNISCHE VORGABEN
+- Szenenlänge: ${lenMap[document.getElementById('sceneLen').value]}
+- ${dirMap[document.getElementById('stageDir').value]}
+- Sprache: ${document.getElementById('langVar').value}
+${extra ? `- Zusatz: ${extra}` : ''}
+
+## STRIKTES DREHBUCHFORMAT
+- Beginn mit: AUFBLENDE:
+- Szenenköpfe: INT./EXT. ORT – TAGESZEIT  (Großbuchstaben, eigene Zeile)
+- Handlungszeilen: linksbündig, Gegenwartsform, bildhaft und kurz
+- Figurennamen: GROSSBUCHSTABEN, zentriert auf eigener Zeile (vor jedem Dialog)
+- Dialog: eingerückt (~4 Leerzeichen) unter dem Figurennamen
+- Regieanweisungen: (in Klammern, direkt nach Figurenname) – sparsam!
+- Übergänge: SCHNITT AUF: / BLENDE AUF: (rechtsbündig, nur wenn dramaturgisch sinnvoll)
+
+## QUALITÄTSPRINZIPIEN
+- Show, don't tell: Emotionen durch Handlung und Dialog – nie durch Beschreibung
+- Jede Szene = Statuswechsel: jemand gewinnt oder verliert Macht / Nähe / Information
+- Dialoge haben Subtext: Figuren sagen selten direkt, was sie meinen
+- Figurenstimmen klar unterscheidbar (gemäß den Sprechweisen oben)
+- Kein Expositionsdialog: Figuren erklären nichts, was die andere schon weiß
+- Schreibe das VOLLSTÄNDIGE Drehbuch – keine Ellipsen, keine Platzhalter
+
+Schreibe jetzt das vollständige Drehbuch:`;
+}
+
+// ════════════════════════════════════════════════
+//  GENERATE  (streaming)
+// ════════════════════════════════════════════════
+async function generate() {
+  if (streaming) return;
+  const apiKey = document.getElementById('apiKey').value.trim();
+  if (!apiKey) { showErr('Bitte API Key eingeben (oben rechts). Key holen: console.anthropic.com/settings/keys'); return; }
+
+  hideErr();
+  streaming  = true;
+  rawScript  = '';
+  ['copyBtn','dlTxt','dlFtn'].forEach(id => document.getElementById(id).style.display = 'none');
+
+  const btn = document.getElementById('genBtn');
+  btn.disabled    = true;
+  btn.textContent = '⏳ Generiere …';
+
+  document.getElementById('outBody').innerHTML = `
+    <div class="loading-view">
+      <div class="spinner"></div>
+      <div class="loading-label">Claude schreibt das Drehbuch …</div>
+      <div class="loading-sub">Das kann 30–90 Sekunden dauern. Das Ergebnis erscheint live.</div>
+    </div>`;
+
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-calls': 'true'
+      },
+      body: JSON.stringify({
+        model:      document.getElementById('model').value,
+        max_tokens: 8192,
+        stream:     true,
+        messages:   [{ role: 'user', content: buildPrompt() }]
+      })
+    });
+
+    if (!res.ok) {
+      const e = await res.json().catch(() => ({}));
+      throw new Error(e.error?.message || `HTTP ${res.status} ${res.statusText}`);
+    }
+
+    // Build output container
+    document.getElementById('outBody').innerHTML = `
+      <div class="screenplay-wrap" id="spWrap">
+        <div class="screenplay-page">
+          <div class="screenplay-text" id="spOut"></div>
+        </div>
+      </div>`;
+
+    const reader = res.body.getReader();
+    const dec    = new TextDecoder();
+    let   buf    = '';
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buf += dec.decode(value, { stream: true });
+      const lines = buf.split('\n');
+      buf = lines.pop();
+      for (const line of lines) {
+        if (!line.startsWith('data:')) continue;
+        const data = line.slice(5).trim();
+        if (data === '[DONE]') continue;
+        try {
+          const obj = JSON.parse(data);
+          if (obj.type === 'content_block_delta' && obj.delta?.type === 'text_delta') {
+            rawScript += obj.delta.text;
+            renderScreenplay(rawScript, true);
+          }
+        } catch { /* ignore parse errors in stream */ }
+      }
+    }
+
+    renderScreenplay(rawScript, false);
+    ['copyBtn','dlTxt','dlFtn'].forEach(id => document.getElementById(id).style.display = '');
+
+  } catch (e) {
+    showErr(e.message);
+    document.getElementById('outBody').innerHTML = `
+      <div class="empty-state">
+        <div class="empty-icon">⚠️</div>
+        <p class="empty-hint" style="color:#e09090">${esc(e.message)}</p>
+        <p class="empty-sub">API Key prüfen · Netzwerk prüfen · Modell wechseln</p>
+      </div>`;
+  } finally {
+    streaming       = false;
+    btn.disabled    = false;
+    btn.textContent = '🎬 Drehbuch generieren';
+  }
+}
+
+// ════════════════════════════════════════════════
+//  SCREENPLAY RENDERER
+//  State machine: tracks whether we're in dialogue
+// ════════════════════════════════════════════════
+function renderScreenplay(text, withCursor) {
+  const el = document.getElementById('spOut');
+  if (!el) return;
+
+  const lines = text.split('\n');
+  let html = '';
+  let afterChar = false;  // just saw a character cue → next line = dialogue
+  let inDial    = false;  // currently in a dialogue block
+
+  const TRANSITIONS = /^(AUFBLENDE[:\s]?|FADE\s?IN[:\s]?|BLENDE\s?AUF[:\s]?|FADE\s?OUT[:\s]?|SCHNITT\s?AUF[:\s]?|CUT\s?TO[:\s]?|ZURÜCK\s?ZU[:\s]?|BACK\s?TO[:\s]?|SMASH\s?CUT[:\s]?|MATCH\s?CUT[:\s]?)/i;
+  const SLUGLINE   = /^(INT\.|EXT\.|I\/A\.|A\/I\.|INNEN[\s.:]|AUSSEN[\s.:])/i;
+
+  for (const raw of lines) {
+    const trim = raw.trim();
+
+    if (!trim) {
+      html += '<span class="sc-blank"></span>';
+      afterChar = false; inDial = false;
+      continue;
+    }
+
+    if (TRANSITIONS.test(trim)) {
+      html += `<span class="sc-transition">${esc(trim)}</span>`;
+      afterChar = false; inDial = false;
+      continue;
+    }
+
+    if (SLUGLINE.test(trim)) {
+      html += `<span class="sc-slug">${esc(trim)}</span>`;
+      afterChar = false; inDial = false;
+      continue;
+    }
+
+    // Parenthetical inside dialogue
+    if (/^\(.*\)$/.test(trim) && trim.length < 70 && (afterChar || inDial)) {
+      html += `<span class="sc-paren">${esc(trim)}</span>`;
+      // afterChar stays; still expecting dialogue
+      continue;
+    }
+
+    // Character cue: ALL CAPS, short, no terminal punctuation, not a slug/transition
+    const upper = trim.toUpperCase();
+    const isChar =
+      trim === upper &&
+      /[A-ZÄÖÜ]/.test(trim) &&
+      trim.length >= 2 && trim.length <= 40 &&
+      !/[.!?]$/.test(trim.replace(/\(.*?\)/g,'').trim()) &&
+      !SLUGLINE.test(trim) &&
+      !TRANSITIONS.test(trim);
+
+    if (isChar) {
+      html += `<span class="sc-char">${esc(trim)}</span>`;
+      afterChar = true; inDial = false;
+      continue;
+    }
+
+    // Dialogue: after character cue, or indented, or continuing dialogue
+    if (afterChar || inDial || raw.startsWith('    ') || raw.startsWith('\t')) {
+      html += `<span class="sc-dial">${esc(trim)}</span>`;
+      afterChar = false; inDial = true;
+      continue;
+    }
+
+    // Action / description
+    html += `<span class="sc-action">${esc(trim)}</span>`;
+    afterChar = false; inDial = false;
+  }
+
+  if (withCursor) html += '<span class="cursor"></span>';
+  el.innerHTML = html;
+
+  // Auto-scroll while streaming
+  if (withCursor) {
+    const wrap = document.getElementById('spWrap');
+    if (wrap) wrap.scrollTop = wrap.scrollHeight;
+  }
+}
+
+// ════════════════════════════════════════════════
+//  EXPORT
+// ════════════════════════════════════════════════
+function copyScript() {
+  navigator.clipboard.writeText(rawScript).then(() => {
+    const b = document.getElementById('copyBtn');
+    const orig = b.textContent;
+    b.textContent = '✓ Kopiert!';
+    setTimeout(() => b.textContent = orig, 2000);
+  }).catch(() => alert('Kopieren fehlgeschlagen. Bitte manuell markieren.'));
+}
+
+function baseName() {
+  return (chars.find(c => c.name)?.name || 'Drehbuch').replace(/\s+/g,'_').replace(/[^a-zA-Z0-9_-]/g,'');
+}
+
+function downloadTxt() {
+  dl(rawScript, `${baseName()}.txt`, 'text/plain;charset=utf-8');
+}
+
+// .fountain format (open standard for screenwriting software)
+function downloadFountain() {
+  // Fountain is plain text – our raw output is close enough; just ensure UTF-8 BOM for apps
+  const bom = '\uFEFF';
+  dl(bom + rawScript, `${baseName()}.fountain`, 'text/plain;charset=utf-8');
+}
+
+function dl(content, filename, type) {
+  const blob = new Blob([content], { type });
+  const url  = URL.createObjectURL(blob);
+  const a    = Object.assign(document.createElement('a'), { href: url, download: filename });
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+// ════════════════════════════════════════════════
+//  ERROR
+// ════════════════════════════════════════════════
+function showErr(msg) {
+  const el = document.getElementById('err-box');
+  el.textContent = '⚠ ' + msg;
+  el.style.display = '';
+}
+function hideErr() {
+  document.getElementById('err-box').style.display = 'none';
+}
+</script>
+</body>
+</html>
