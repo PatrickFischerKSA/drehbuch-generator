@@ -555,23 +555,21 @@ async function generate() {
       <div class="loading-sub">Das kann 30–90 Sekunden dauern. Das Ergebnis erscheint live.</div>
     </div>`;
 
-  try {
-    const proxyUrl = (document.getElementById('proxyUrl').value || '').trim();
-    const endpoint = proxyUrl || 'https://api.anthropic.com/v1/messages';
+  const proxyUrl = (document.getElementById('proxyUrl').value || '').trim();
+  const endpoint = proxyUrl || 'https://api.anthropic.com/v1/messages';
+  const model    = document.getElementById('model').value;
+
+  // Streams one request; returns stop_reason
+  async function streamOnce(messages, isFirst) {
     const res = await fetch(endpoint, {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': apiKey,
+        'Content-Type':      'application/json',
+        'x-api-key':         apiKey,
         'anthropic-version': '2023-06-01',
         ...(!proxyUrl && { 'anthropic-dangerous-direct-browser-calls': 'true' })
       },
-      body: JSON.stringify({
-        model:      document.getElementById('model').value,
-        max_tokens: 8192,
-        stream:     true,
-        messages:   [{ role: 'user', content: buildPrompt() }]
-      })
+      body: JSON.stringify({ model, max_tokens: 8192, stream: true, messages })
     });
 
     if (!res.ok) {
@@ -579,17 +577,19 @@ async function generate() {
       throw new Error(e.error?.message || `HTTP ${res.status} ${res.statusText}`);
     }
 
-    // Build output container
-    document.getElementById('outBody').innerHTML = `
-      <div class="screenplay-wrap" id="spWrap">
-        <div class="screenplay-page">
-          <div class="screenplay-text" id="spOut"></div>
-        </div>
-      </div>`;
+    if (isFirst) {
+      document.getElementById('outBody').innerHTML = `
+        <div class="screenplay-wrap" id="spWrap">
+          <div class="screenplay-page">
+            <div class="screenplay-text" id="spOut"></div>
+          </div>
+        </div>`;
+    }
 
     const reader = res.body.getReader();
     const dec    = new TextDecoder();
     let   buf    = '';
+    let   stopReason = 'end_turn';
 
     while (true) {
       const { done, value } = await reader.read();
@@ -607,8 +607,36 @@ async function generate() {
             rawScript += obj.delta.text;
             renderScreenplay(rawScript, true);
           }
+          if (obj.type === 'message_delta' && obj.delta?.stop_reason) {
+            stopReason = obj.delta.stop_reason;
+          }
         } catch { /* ignore parse errors in stream */ }
       }
+    }
+    return stopReason;
+  }
+
+  try {
+    let messages     = [{ role: 'user', content: buildPrompt() }];
+    let isFirst      = true;
+    let continueCount = 0;
+
+    while (true) {
+      const stopReason = await streamOnce(messages, isFirst);
+      isFirst = false;
+
+      // Natürliches Ende oder Sicherheitsgrenze (max 4 Fortsetzungen)
+      if (stopReason !== 'max_tokens' || continueCount >= 4) break;
+
+      continueCount++;
+      btn.textContent = `⏳ Fortsetzung ${continueCount} …`;
+
+      // Nächsten Request mit Konversationsverlauf aufbauen
+      messages = [
+        { role: 'user',      content: buildPrompt() },
+        { role: 'assistant', content: rawScript },
+        { role: 'user',      content: 'Fahre das Drehbuch nahtlos fort, genau dort wo du aufgehört hast. Kein Kommentar, direkt weiter mit dem Drehbuch-Text.' }
+      ];
     }
 
     renderScreenplay(rawScript, false);
